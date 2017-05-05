@@ -9,6 +9,8 @@ public class TestBot1 extends DefaultBWListener {
 	private Game game;
 
 	private Player self;
+	
+	private int supplyCheck = 0;
 
 	public void run() {
 		mirror.getModule().setEventListener(this);
@@ -47,7 +49,7 @@ public class TestBot1 extends DefaultBWListener {
 	public void onFrame() {
 		// game.setTextSize(10);
 		game.drawTextScreen(10, 10, "Playing as " + self.getName() + " - " + self.getRace());
-
+		boolean supplyChecked = false;
 		StringBuilder units = new StringBuilder("My units:\n");
 
 		// iterate through my units
@@ -61,7 +63,9 @@ public class TestBot1 extends DefaultBWListener {
 
 			// if it's a worker and it's idle, send it to the closest mineral
 			// patch
-			checkSupply(myUnit);
+			if(!supplyChecked){
+				supplyChecked = checkSupply(myUnit);
+			}	
 			if (myUnit.getType().isWorker() && myUnit.isIdle()) {
 				Unit closestMineral = null;
 
@@ -86,11 +90,13 @@ public class TestBot1 extends DefaultBWListener {
 		game.drawTextScreen(10, 25, units.toString());
 	}
 
-	private void checkSupply(Unit myUnit) {
-		if (myUnit.getType().isWorker() && self.supplyTotal() <= self.supplyUsed()+1 && self.minerals() >= 100) {
+	private boolean checkSupply(Unit myUnit) {
+		++supplyCheck;
+		if (supplyCheck%9 == 0 && myUnit.getType().isWorker() && self.supplyTotal() <= self.supplyUsed()+1 && self.minerals() >= 100 && 1 > self.incompleteUnitCount(UnitType.Terran_Supply_Depot)) {
 			TilePosition emplacement = game.getBuildLocation(UnitType.Terran_Supply_Depot, myUnit.getTilePosition());
-			myUnit.build(UnitType.Terran_Supply_Depot, emplacement);
+				myUnit.build(UnitType.Terran_Supply_Depot, emplacement);
 		}	
+		return true;
 	}
 
 	public static void main(String[] args) {
