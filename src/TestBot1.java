@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.Collections;
+
 import bwapi.*;
 import bwta.BWTA;
 import bwta.BaseLocation;
@@ -78,17 +81,17 @@ public class TestBot1 extends DefaultBWListener {
 			}
 			//Construit les extracteurs
 			ConstruitExtracteurGaz(myUnit);
-			//Construit les marines
-			if (myUnit.getType() == UnitType.Terran_Barracks && self.minerals() >= 50 &&  !(self.supplyTotal() <= self.supplyUsed()+1 && !myUnit.isTraining())){
-				myUnit.train(UnitType.Terran_Marine);				
-			}
+			//Construit Academie
+			ConsrtuitAcademy(myUnit);
+			//Decide quels Units construire
+			ReseauBayesienDecisionTrainUnit();
 			// Verifie si on doit construire des Supply
 			if(!supplyChecked){
 			checkSupply(myUnit);
 			supplyChecked = true;
 			}	
 			//Gère les attaques
-			AttaqueMarines(myUnit);
+			AttaqueUnits(myUnit);
 			//Verifie si un Worker fait rien
 			if (myUnit.getType().isWorker() && myUnit.isIdle()) {
 				Unit closestMineral = null;
@@ -112,8 +115,8 @@ public class TestBot1 extends DefaultBWListener {
 		game.drawTextScreen(10, 25, units.toString());
 	}
 
-	private void AttaqueMarines(Unit myUnit){
-		if(myUnit.getType().equals(UnitType.Terran_Marine) && myUnit.isIdle()){
+	private void AttaqueUnits(Unit myUnit){
+		if(myUnit.getType().canAttack() && myUnit.isIdle()){
 			Unit closestEnnemy = null;	
 			for(Unit e : Ennemy.getUnits()){
 				System.out.println("for each");
@@ -126,9 +129,47 @@ public class TestBot1 extends DefaultBWListener {
 			if(closestEnnemy != null){
 			myUnit.attack(closestEnnemy, false);	
 			}else{
-				myUnit.move(game.getAllRegions().get(3).getCenter());
+			//	myUnit.move();
 			}
 		}
+	}
+	private void ReseauBayesienDecisionTrainUnit(){
+		//declaration
+		UnitType UnitChoisi = null;
+		double HighestProb = 0;
+		double p_Marine= Math.random();
+		double p_Firebat= Math.random()+0.1;
+		//game.elapsedTime()
+		//Facteurs qui influence les probabilités
+		
+		if(Ennemy.getRace() == Race.Zerg || Ennemy.getRace() == Race.Protoss){
+			p_Firebat +=0.15;
+		}
+		if(self.gas() < 50){
+			p_Marine +=0.5;
+		}
+		//calcul du plus élevé
+		System.out.println("Marine: "+p_Marine);
+		System.out.println("Firebat: "+p_Firebat);
+		if(p_Marine >HighestProb){HighestProb = p_Marine; UnitChoisi = UnitType.Terran_Marine;}
+		if(p_Firebat >HighestProb){HighestProb = p_Firebat;UnitChoisi = UnitType.Terran_Firebat;}
+		//Construit les Units
+		for (Unit myUnit : self.getUnits()) {
+
+		if (UnitChoisi.equals(UnitType.Terran_Marine) && myUnit.getType() == UnitType.Terran_Barracks && self.minerals() >= 50 &&  !(self.supplyTotal() <= self.supplyUsed()+1 && !myUnit.isTraining())){
+			myUnit.train(UnitType.Terran_Marine);				
+		}
+		if (UnitChoisi.equals(UnitType.Terran_Firebat) && myUnit.getType() == UnitType.Terran_Barracks && self.gas() >= 25 && self.minerals() >= 50 &&  !(self.supplyTotal() <= self.supplyUsed()+1 && !myUnit.isTraining())){
+			myUnit.train(UnitType.Terran_Firebat);				
+		}
+		}
+	}
+	private void ConsrtuitAcademy(Unit myUnit){
+		if(myUnit.getType().isWorker() && self.incompleteUnitCount(UnitType.Terran_Academy) ==0 && self.completedUnitCount(UnitType.Terran_Academy) ==0 && 0 < self.completedUnitCount(UnitType.Terran_Barracks) && self.minerals() >=150){
+			TilePosition emplacement = game.getBuildLocation(UnitType.Terran_Academy, myUnit.getTilePosition());
+			myUnit.build(UnitType.Terran_Academy, emplacement);
+		}
+
 	}
 	private void ConstruitExtracteurGaz(Unit myUnit){
 		if(myUnit.getType().isRefinery()){
@@ -148,7 +189,7 @@ public class TestBot1 extends DefaultBWListener {
 	}
 	private void checkSupply(Unit myUnit) {
 		++supplyCheckTimer;
-		if (supplyCheckTimer%31 == 0 && myUnit.getType().isWorker() && self.supplyTotal()-3 <= self.supplyUsed() && self.minerals() >= 100 && 0 == self.incompleteUnitCount(UnitType.Terran_Supply_Depot)) {
+		if (supplyCheckTimer%9 == 0 && myUnit.getType().isWorker() && self.supplyTotal()-4 <= self.supplyUsed() && self.minerals() >= 100 ) {
 			TilePosition emplacement = game.getBuildLocation(UnitType.Terran_Supply_Depot, myUnit.getTilePosition());
 				myUnit.build(UnitType.Terran_Supply_Depot, emplacement);
 		}	
