@@ -104,20 +104,26 @@ public class TestBot1 extends DefaultBWListener {
 		// draw my units on screen
 		game.drawTextScreen(10, 25, units.toString());
 	}
-	private void AttaqueMarines( Unit myUnit){
-		if(myUnit.getType().equals(UnitType.Terran_Marine)){
+	private void AttaqueMarines(Unit myUnit){
+		if(myUnit.getType().equals(UnitType.Terran_Marine) && myUnit.isIdle()){
 			Unit closestEnnemy = null;	
 			for(Unit e : Ennemy.getUnits()){
+				System.out.println("for each");
 				if((closestEnnemy == null || e.getDistance(myUnit) < closestEnnemy.getDistance(myUnit))){
-					myUnit.attack(closestEnnemy);
+					System.out.println("set e");
+					closestEnnemy = e;
 				}
+			}
+			System.out.println("attack");
+			if(closestEnnemy != null){
+			myUnit.attack(closestEnnemy, false);
 			}
 		}
 	}
 	
 	private void checkSupply(Unit myUnit) {
 		++supplyCheck;
-		if (supplyCheck%17 == 0 && myUnit.getType().isWorker() && (self.supplyTotal()-3) <= self.supplyUsed()+1 && self.minerals() >= 100 && 0 == self.incompleteUnitCount(UnitType.Terran_Supply_Depot)) {
+		if (supplyCheck%17 == 0 && myUnit.getType().isWorker() && self.supplyTotal()+2 <= self.supplyUsed() && self.minerals() >= 100 && 0 == self.incompleteUnitCount(UnitType.Terran_Supply_Depot)) {
 			TilePosition emplacement = game.getBuildLocation(UnitType.Terran_Supply_Depot, myUnit.getTilePosition());
 				myUnit.build(UnitType.Terran_Supply_Depot, emplacement);
 		}	
