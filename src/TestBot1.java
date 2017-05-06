@@ -9,7 +9,8 @@ public class TestBot1 extends DefaultBWListener {
 	private Game game;
 
 	private Player self;
-	
+	private Player Ennemy;
+	private boolean SavePourBarrack;
 	private int supplyCheck = 0;
 
 	public void run() {
@@ -33,7 +34,8 @@ public class TestBot1 extends DefaultBWListener {
 		BWTA.readMap();
 		BWTA.analyze();
 		System.out.println("Map data ready");
-
+		SavePourBarrack = false;
+		Ennemy = game.enemy();
 		int i = 0;
 		for (BaseLocation baseLocation : BWTA.getBaseLocations()) {
 			System.out.println("Base location #" + (++i) + ". Printing location's region polygon:");
@@ -52,24 +54,39 @@ public class TestBot1 extends DefaultBWListener {
 		boolean supplyChecked = false;
 		StringBuilder units = new StringBuilder("My units:\n");
 
-		// iterate through my units
+		// Iteration pour chaque units
 		for (Unit myUnit : self.getUnits()) {
 			units.append(myUnit.getType()).append(" ").append(myUnit.getTilePosition()).append("\n");
 
-			// if there's enough minerals, train an SCV
-			if (myUnit.getType() == UnitType.Terran_Command_Center && self.minerals() >= 50) {
+			// Construit des travailleurs
+			if (myUnit.getType() == UnitType.Terran_Command_Center && self.minerals() >= 50 && !((self.supplyTotal()-3) <= self.supplyUsed()+1) && 21>self.allUnitCount(UnitType.Terran_SCV)&& !SavePourBarrack) {
 				myUnit.train(UnitType.Terran_SCV);
 			}
 
-			// if it's a worker and it's idle, send it to the closest mineral
-			// patch
-			if(!supplyChecked){
-				supplyChecked = checkSupply(myUnit);
-			}	
+			// Construit les barracks
+			if(self.completedUnitCount(UnitType.Terran_Supply_Depot) == 1 && self.incompleteUnitCount(UnitType.Terran_Barracks) == 0){
+				SavePourBarrack = true;
+			}
+			if(supplyCheck%17 == 0 && SavePourBarrack && self.minerals() >= 150 && myUnit.getType().isWorker() && self.incompleteUnitCount(UnitType.Terran_Barracks) == 0){
+				TilePosition emplacement = game.getBuildLocation(UnitType.Terran_Barracks, myUnit.getTilePosition());
+				myUnit.build(UnitType.Terran_Barracks, emplacement);
+			}
+			if(self.incompleteUnitCount(UnitType.Terran_Barracks) > 0){
+				SavePourBarrack = false;
+			}
+			//Construit les marines
+			if (myUnit.getType() == UnitType.Terran_Barracks && self.minerals() >= 50 &&  !(self.supplyTotal() <= self.supplyUsed()+1)){
+				myUnit.train(UnitType.Terran_Marine);				
+			}
+			// Verifie si on doit construire des Supply
+			checkSupply(myUnit);
+			//Gère les attaques
+			AttaqueMarines(myUnit);
+			//Verifie si un Worker fait rien
 			if (myUnit.getType().isWorker() && myUnit.isIdle()) {
 				Unit closestMineral = null;
 
-				// find the closest mineral
+				// Trouve les mineraux les plus pres
 				for (Unit neutralUnit : game.neutral().getUnits()) {
 					if (neutralUnit.getType().isMineralField()) {
 						if (closestMineral == null
@@ -78,25 +95,32 @@ public class TestBot1 extends DefaultBWListener {
 						}
 					}
 				}
-
-				// if a mineral patch was found, send the worker to gather it
+				// Si mineraux trouves, envois les travailleurs les ramasser
 				if (closestMineral != null) {
 					myUnit.gather(closestMineral, false);
 				}
 			}
-		}
-
+		}// FIN Iteration pour chaque units
 		// draw my units on screen
 		game.drawTextScreen(10, 25, units.toString());
 	}
-
-	private boolean checkSupply(Unit myUnit) {
+	private void AttaqueMarines( Unit myUnit){
+		if(myUnit.getType().equals(UnitType.Terran_Marine)){
+			Unit closestEnnemy = null;	
+			for(Unit e : Ennemy.getUnits()){
+				if((closestEnnemy == null || e.getDistance(myUnit) < closestEnnemy.getDistance(myUnit))){
+					myUnit.attack(closestEnnemy);
+				}
+			}
+		}
+	}
+	
+	private void checkSupply(Unit myUnit) {
 		++supplyCheck;
-		if (supplyCheck%9 == 0 && myUnit.getType().isWorker() && self.supplyTotal() <= self.supplyUsed()+1 && self.minerals() >= 100 && 1 > self.incompleteUnitCount(UnitType.Terran_Supply_Depot)) {
+		if (supplyCheck%17 == 0 && myUnit.getType().isWorker() && (self.supplyTotal()-3) <= self.supplyUsed()+1 && self.minerals() >= 100 && 0 == self.incompleteUnitCount(UnitType.Terran_Supply_Depot)) {
 			TilePosition emplacement = game.getBuildLocation(UnitType.Terran_Supply_Depot, myUnit.getTilePosition());
 				myUnit.build(UnitType.Terran_Supply_Depot, emplacement);
 		}	
-		return true;
 	}
 
 	public static void main(String[] args) {
