@@ -11,7 +11,8 @@ public class TestBot1 extends DefaultBWListener {
 	private Player self;
 	private Player Ennemy;
 	private boolean SavePourBarrack;
-	private int supplyCheck = 0;
+	private int buildingTimer = 0;
+	private int supplyCheckTimer = 0;
 
 	public void run() {
 		mirror.getModule().setEventListener(this);
@@ -53,21 +54,21 @@ public class TestBot1 extends DefaultBWListener {
 		game.drawTextScreen(10, 10, "Playing as " + self.getName() + " - " + self.getRace());
 		boolean supplyChecked = false;
 		StringBuilder units = new StringBuilder("My units:\n");
-
+		
 		// Iteration pour chaque units
 		for (Unit myUnit : self.getUnits()) {
 			units.append(myUnit.getType()).append(" ").append(myUnit.getTilePosition()).append("\n");
 
 			// Construit des travailleurs
-			if (myUnit.getType() == UnitType.Terran_Command_Center && self.minerals() >= 50 && 21>self.allUnitCount(UnitType.Terran_SCV) && !SavePourBarrack) {
+			if (myUnit.getType() == UnitType.Terran_Command_Center && self.minerals() >= 50 && 21 > self.allUnitCount(UnitType.Terran_SCV) && !SavePourBarrack) {
 				myUnit.train(UnitType.Terran_SCV);
 			}
 
 			// Construit les barracks
-			if(self.completedUnitCount(UnitType.Terran_Supply_Depot) == 1 && self.incompleteUnitCount(UnitType.Terran_Barracks) == 0){
+			if(self.completedUnitCount(UnitType.Terran_Supply_Depot) == 1 && self.incompleteUnitCount(UnitType.Terran_Barracks) == 0 && ++buildingTimer%17 == 0){
 				SavePourBarrack = true;
 			}
-			if(supplyCheck%17 == 0 && SavePourBarrack && self.minerals() >= 150 && myUnit.getType().isWorker() && self.incompleteUnitCount(UnitType.Terran_Barracks) == 0){
+			if(supplyCheckTimer%17 == 0 && SavePourBarrack && self.minerals() >= 150 && myUnit.getType().isWorker() && self.incompleteUnitCount(UnitType.Terran_Barracks) == 0){
 				TilePosition emplacement = game.getBuildLocation(UnitType.Terran_Barracks, myUnit.getTilePosition());
 				myUnit.build(UnitType.Terran_Barracks, emplacement);
 			}
@@ -119,14 +120,16 @@ public class TestBot1 extends DefaultBWListener {
 			}
 			System.out.println("attack");
 			if(closestEnnemy != null){
-			myUnit.attack(closestEnnemy, false);
+			myUnit.attack(closestEnnemy, false);	
+			}else{
+			//	myUnit.move();
 			}
 		}
 	}
 	
 	private void checkSupply(Unit myUnit) {
-		++supplyCheck;
-		if (supplyCheck%17 == 0 && myUnit.getType().isWorker() && self.supplyTotal()-2 <= self.supplyUsed() && self.minerals() >= 100 && 0 == self.incompleteUnitCount(UnitType.Terran_Supply_Depot)) {
+		++supplyCheckTimer;
+		if (supplyCheckTimer%17 == 0 && myUnit.getType().isWorker() && self.supplyTotal()-2 <= self.supplyUsed() && self.minerals() >= 100 && 0 == self.incompleteUnitCount(UnitType.Terran_Supply_Depot)) {
 			TilePosition emplacement = game.getBuildLocation(UnitType.Terran_Supply_Depot, myUnit.getTilePosition());
 				myUnit.build(UnitType.Terran_Supply_Depot, emplacement);
 		}	
