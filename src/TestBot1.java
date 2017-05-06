@@ -99,7 +99,24 @@ public class TestBot1 extends DefaultBWListener {
 		}	
 		return true;
 	}
-
+	
+	private void checkMarines(Unit myUnit){
+//					// Construit les barracks
+//					if(self.completedUnitCount(UnitType.Terran_Supply_Depot) == 1 && self.incompleteUnitCount(UnitType.Terran_Barracks) == 0){
+//						SavePourBarrack = true;
+//					}
+//					if(supplyCheck%17 == 0 && SavePourBarrack && self.minerals() >= 150 && myUnit.getType().isWorker() && self.incompleteUnitCount(UnitType.Terran_Barracks) == 0){
+//						TilePosition emplacement = game.getBuildLocation(UnitType.Terran_Barracks, myUnit.getTilePosition());
+//						myUnit.build(UnitType.Terran_Barracks, emplacement);
+//					}
+//					if(self.incompleteUnitCount(UnitType.Terran_Barracks) > 0){
+//						SavePourBarrack = false;
+//					}
+//					//Construit les marines
+//					if (myUnit.getType() == UnitType.Terran_Barracks && self.minerals() >= 50 &&  !(self.supplyTotal() <= self.supplyUsed()+1)){
+//						myUnit.train(UnitType.Terran_Marine);				
+//					}
+	}
 	public static void main(String[] args) {
 		new TestBot1().run();
 	}
