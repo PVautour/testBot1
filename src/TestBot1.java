@@ -7,10 +7,11 @@ public class TestBot1 extends DefaultBWListener {
 	private Mirror mirror = new Mirror();
 
 	private Game game;
-
+	private Unit LaRafinery;
 	private Player self;
 	private Player Ennemy;
 	private boolean SavePourBarrack;
+	private int NbWorkerGaz = 0;
 	private int buildingTimer = 0;
 	private int supplyCheckTimer = 0;
 
@@ -60,7 +61,7 @@ public class TestBot1 extends DefaultBWListener {
 			units.append(myUnit.getType()).append(" ").append(myUnit.getTilePosition()).append("\n");
 
 			// Construit des travailleurs
-			if (myUnit.getType() == UnitType.Terran_Command_Center && self.minerals() >= 50 && 21 > self.allUnitCount(UnitType.Terran_SCV) && !SavePourBarrack) {
+			if (myUnit.getType() == UnitType.Terran_Command_Center && self.minerals() >= 50 && 21>self.allUnitCount(UnitType.Terran_SCV) && !SavePourBarrack) {
 				myUnit.train(UnitType.Terran_SCV);
 			}
 
@@ -68,13 +69,15 @@ public class TestBot1 extends DefaultBWListener {
 			if(self.completedUnitCount(UnitType.Terran_Supply_Depot) == 1 && self.incompleteUnitCount(UnitType.Terran_Barracks) == 0 && ++buildingTimer%17 == 0){
 				SavePourBarrack = true;
 			}
-			if(supplyCheckTimer%17 == 0 && SavePourBarrack && self.minerals() >= 150 && myUnit.getType().isWorker() && self.incompleteUnitCount(UnitType.Terran_Barracks) == 0){
+			if(supplyCheckTimer%31 == 0 && SavePourBarrack && self.minerals() >= 150 && myUnit.getType().isWorker() && self.incompleteUnitCount(UnitType.Terran_Barracks) == 0){
 				TilePosition emplacement = game.getBuildLocation(UnitType.Terran_Barracks, myUnit.getTilePosition());
 				myUnit.build(UnitType.Terran_Barracks, emplacement);
 			}
 			if(self.incompleteUnitCount(UnitType.Terran_Barracks) > 0){
 				SavePourBarrack = false;
 			}
+			//Construit les extracteurs
+			ConstruitExtracteurGaz(myUnit);
 			//Construit les marines
 			if (myUnit.getType() == UnitType.Terran_Barracks && self.minerals() >= 50 &&  !(self.supplyTotal() <= self.supplyUsed()+1 && !myUnit.isTraining())){
 				myUnit.train(UnitType.Terran_Marine);				
@@ -108,6 +111,7 @@ public class TestBot1 extends DefaultBWListener {
 		// draw my units on screen
 		game.drawTextScreen(10, 25, units.toString());
 	}
+
 	private void AttaqueMarines(Unit myUnit){
 		if(myUnit.getType().equals(UnitType.Terran_Marine) && myUnit.isIdle()){
 			Unit closestEnnemy = null;	
@@ -122,14 +126,29 @@ public class TestBot1 extends DefaultBWListener {
 			if(closestEnnemy != null){
 			myUnit.attack(closestEnnemy, false);	
 			}else{
-			//	myUnit.move();
+				myUnit.move(game.getAllRegions().get(3).getCenter());
 			}
 		}
 	}
-	
+	private void ConstruitExtracteurGaz(Unit myUnit){
+		if(myUnit.getType().isRefinery()){
+			LaRafinery = myUnit;
+		}
+		if(myUnit.getType().isWorker() && self.completedUnitCount(UnitType.Terran_Refinery) ==0 && self.incompleteUnitCount(UnitType.Terran_Refinery)==0 && self.incompleteUnitCount(UnitType.Terran_Barracks) == 1){
+			TilePosition emplacement = game.getBuildLocation(UnitType.Terran_Refinery, myUnit.getTilePosition());
+			myUnit.build(UnitType.Terran_Refinery, emplacement);
+		}
+		NbWorkerGaz = 0;
+		if(myUnit.getType().isWorker() && myUnit.isIdle() ){
+			for (Unit myUnitWorker : self.getUnits()) { if(myUnitWorker.isCarryingGas() || myUnitWorker.isGatheringGas()){NbWorkerGaz+=1;}}
+		if(NbWorkerGaz < 2 && self.completedUnitCount(UnitType.Terran_Refinery) ==1 ){
+			myUnit.gather(LaRafinery, false);
+		}
+		}
+	}
 	private void checkSupply(Unit myUnit) {
 		++supplyCheckTimer;
-		if (supplyCheckTimer%17 == 0 && myUnit.getType().isWorker() && self.supplyTotal()-2 <= self.supplyUsed() && self.minerals() >= 100 && 0 == self.incompleteUnitCount(UnitType.Terran_Supply_Depot)) {
+		if (supplyCheckTimer%31 == 0 && myUnit.getType().isWorker() && self.supplyTotal()-3 <= self.supplyUsed() && self.minerals() >= 100 && 0 == self.incompleteUnitCount(UnitType.Terran_Supply_Depot)) {
 			TilePosition emplacement = game.getBuildLocation(UnitType.Terran_Supply_Depot, myUnit.getTilePosition());
 				myUnit.build(UnitType.Terran_Supply_Depot, emplacement);
 		}	
