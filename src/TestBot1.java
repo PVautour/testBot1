@@ -59,7 +59,7 @@ public class TestBot1 extends DefaultBWListener {
 			units.append(myUnit.getType()).append(" ").append(myUnit.getTilePosition()).append("\n");
 
 			// Construit des travailleurs
-			if (myUnit.getType() == UnitType.Terran_Command_Center && self.minerals() >= 50 && !((self.supplyTotal()-3) <= self.supplyUsed()+1) && 21>self.allUnitCount(UnitType.Terran_SCV)&& !SavePourBarrack) {
+			if (myUnit.getType() == UnitType.Terran_Command_Center && self.minerals() >= 50 && 21>self.allUnitCount(UnitType.Terran_SCV) && !SavePourBarrack) {
 				myUnit.train(UnitType.Terran_SCV);
 			}
 
@@ -75,11 +75,14 @@ public class TestBot1 extends DefaultBWListener {
 				SavePourBarrack = false;
 			}
 			//Construit les marines
-			if (myUnit.getType() == UnitType.Terran_Barracks && self.minerals() >= 50 &&  !(self.supplyTotal() <= self.supplyUsed()+1)){
+			if (myUnit.getType() == UnitType.Terran_Barracks && self.minerals() >= 50 &&  !(self.supplyTotal() <= self.supplyUsed()+1 && !myUnit.isTraining())){
 				myUnit.train(UnitType.Terran_Marine);				
 			}
 			// Verifie si on doit construire des Supply
+			if(!supplyChecked){
 			checkSupply(myUnit);
+			supplyChecked = true;
+			}	
 			//Gère les attaques
 			AttaqueMarines(myUnit);
 			//Verifie si un Worker fait rien
@@ -123,7 +126,7 @@ public class TestBot1 extends DefaultBWListener {
 	
 	private void checkSupply(Unit myUnit) {
 		++supplyCheck;
-		if (supplyCheck%17 == 0 && myUnit.getType().isWorker() && self.supplyTotal()+2 <= self.supplyUsed() && self.minerals() >= 100 && 0 == self.incompleteUnitCount(UnitType.Terran_Supply_Depot)) {
+		if (supplyCheck%17 == 0 && myUnit.getType().isWorker() && self.supplyTotal()-2 <= self.supplyUsed() && self.minerals() >= 100 && 0 == self.incompleteUnitCount(UnitType.Terran_Supply_Depot)) {
 			TilePosition emplacement = game.getBuildLocation(UnitType.Terran_Supply_Depot, myUnit.getTilePosition());
 				myUnit.build(UnitType.Terran_Supply_Depot, emplacement);
 		}	
