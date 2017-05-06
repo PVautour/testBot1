@@ -60,12 +60,13 @@ public class TestBot1 extends DefaultBWListener {
 			if (myUnit.getType() == UnitType.Terran_Command_Center && self.minerals() >= 50) {
 				myUnit.train(UnitType.Terran_SCV);
 			}
-
-			// if it's a worker and it's idle, send it to the closest mineral
-			// patch
+			// Verifier supply si non-verifie
 			if(!supplyChecked){
 				supplyChecked = checkSupply(myUnit);
 			}	
+			// if it's a worker and it's idle, send it to the closest mineral
+			// patch
+			
 			if (myUnit.getType().isWorker() && myUnit.isIdle()) {
 				Unit closestMineral = null;
 
@@ -92,7 +93,7 @@ public class TestBot1 extends DefaultBWListener {
 
 	private boolean checkSupply(Unit myUnit) {
 		++supplyCheck;
-		if (supplyCheck%9 == 0 && myUnit.getType().isWorker() && self.supplyTotal() <= self.supplyUsed()+1 && self.minerals() >= 100 && 1 > self.incompleteUnitCount(UnitType.Terran_Supply_Depot)) {
+		if (supplyCheck%15 == 0 && myUnit.getType().isWorker() && self.supplyTotal() <= self.supplyUsed()+2 && self.minerals() >= 100 && 1 > self.incompleteUnitCount(UnitType.Terran_Supply_Depot)) {
 			TilePosition emplacement = game.getBuildLocation(UnitType.Terran_Supply_Depot, myUnit.getTilePosition());
 				myUnit.build(UnitType.Terran_Supply_Depot, emplacement);
 		}	
